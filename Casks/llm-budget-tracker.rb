@@ -1,6 +1,6 @@
 cask "llm-budget-tracker" do
-  version "0.0.1"
-  sha256 "f6aa58761ede23343ac7838f8d660c908e6b0d039b784b5d5a96084ac260781d"
+  version "0.0.2"
+  sha256 "2f041402104e9ee92f5f98c5fd59a6616c2407094a492be1accef5a37e387001"
 
   url "https://github.com/ilja82/llm-budget-tracker/releases/download/v#{version}/LLMBudgetTracker.dmg"
   name "LLM Budget Tracker"

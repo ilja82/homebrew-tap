@@ -4,7 +4,7 @@ cask "llm-budget-tracker" do
 
   url "https://github.com/ilja82/llm-budget-tracker/releases/download/v#{version}/LLMBudgetTracker.dmg"
   name "LLM Budget Tracker"
-  desc "macOS Menu Bar app that tracks LiteLLM budget usage"
+  desc "Menu Bar app that tracks LiteLLM budget usage"
   homepage "https://github.com/ilja82/llm-budget-tracker"
 
   livecheck do

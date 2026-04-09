@@ -12,6 +12,9 @@ cask "llm-budget-tracker" do
     strategy :github_latest
   end
 
+  depends_on arch:  :arm64,
+             macos: ">= :tahoe"
+
   app "LLMBudgetTracker.app"
 
   zap trash: [

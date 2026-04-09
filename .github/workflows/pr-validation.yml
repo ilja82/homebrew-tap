@@ -1,0 +1,78 @@
+name: PR Validation
+
+on:
+  pull_request:
+    paths:
+      - "Casks/**"
+      - ".github/workflows/pr-validation.yml"
+
+permissions: {}
+
+jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      casks: ${{ steps.changed.outputs.casks }}
+      has_cask_changes: ${{ steps.changed.outputs.has_cask_changes }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Get changes
+        id: changed
+        run: |
+          CASKS=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} -- 'Casks/*.rb' | xargs -I{} basename {} .rb)
+          if [ -z "$CASKS" ]; then
+            echo "No cask changes detected"
+            echo "has_cask_changes=false" >> $GITHUB_OUTPUT
+            echo "casks=[]" >> $GITHUB_OUTPUT
+          else
+            JSON_ARRAY=$(echo "$CASKS" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+            echo "Changed casks: $JSON_ARRAY"
+            echo "has_cask_changes=true" >> $GITHUB_OUTPUT
+            echo "casks=$JSON_ARRAY" >> $GITHUB_OUTPUT
+          fi
+
+  validate-cask:
+    name: Validate Cask (${{ matrix.cask }})
+    runs-on: macos-26
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has_cask_changes == 'true'
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        cask: ${{ fromJson(needs.detect-changes.outputs.casks) }}
+    env:
+      TAP_PATH: ${{ github.repository_owner }}/homebrew-tap
+      CASK_PATH: ${{ github.repository_owner }}/homebrew-tap/${{ matrix.cask }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Tap this repository
+        run: |
+          ABS_TAP_PATH="$(brew --repository)/Library/Taps/${TAP_PATH}"
+          mkdir -p "$ABS_TAP_PATH"
+          cp -r . "$ABS_TAP_PATH"
+
+      - name: Run brew style
+        run: brew style --cask "${{ env.CASK_PATH }}"
+
+      - name: Run brew audit
+        run: brew audit --strict --cask "${{ env.CASK_PATH }}"
+
+      - name: Install cask
+        run: brew install --cask --verbose "${{ env.CASK_PATH }}"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          brew uninstall --cask "${{ env.CASK_PATH }}" 2>/dev/null || true
+          rm -rf "$(brew --repository)/Library/Taps/${{ env.TAP_PATH }}" || true

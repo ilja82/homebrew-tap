@@ -13,7 +13,7 @@ cask "llm-budget-tracker" do
   end
 
   depends_on arch:  :arm64,
-             macos: ">= :tahoe"
+             macos: :tahoe
 
   app "LLMBudgetTracker.app"
 

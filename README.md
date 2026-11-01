@@ -11,3 +11,9 @@ brew tap ilja82/tap
 | Cask | Description |
 | ---- | ----------- |
 | `llm-budget-tracker` | macOS Menu Bar app that tracks LiteLLM budget usage |
+
+## Formulae
+
+| Formula | Description |
+| ------- | ----------- |
+| `aisbx` | Run coding agents in Docker Sandboxes on your own accounts and gateways |

@@ -12,6 +12,8 @@ jobs:
     outputs:
       casks: ${{ steps.changed.outputs.casks }}
       has_cask_changes: ${{ steps.changed.outputs.has_cask_changes }}
+      formulae: ${{ steps.changed.outputs.formulae }}
+      has_formula_changes: ${{ steps.changed.outputs.has_formula_changes }}
     permissions:
       contents: read
     steps:
@@ -33,6 +35,17 @@ jobs:
             echo "Changed casks: $JSON_ARRAY"
             echo "has_cask_changes=true" >> $GITHUB_OUTPUT
             echo "casks=$JSON_ARRAY" >> $GITHUB_OUTPUT
+          fi
+          FORMULAE=$(git diff --name-only --diff-filter=d ${{ github.event.pull_request.base.sha }} ${{ github.sha }} -- 'Formula/*.rb' | xargs -I{} basename {} .rb)
+          if [ -z "$FORMULAE" ]; then
+            echo "No formula changes detected"
+            echo "has_formula_changes=false" >> $GITHUB_OUTPUT
+            echo "formulae=[]" >> $GITHUB_OUTPUT
+          else
+            JSON_ARRAY=$(echo "$FORMULAE" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+            echo "Changed formulae: $JSON_ARRAY"
+            echo "has_formula_changes=true" >> $GITHUB_OUTPUT
+            echo "formulae=$JSON_ARRAY" >> $GITHUB_OUTPUT
           fi
 
   validate-cask:
@@ -58,6 +71,7 @@ jobs:
           ABS_TAP_PATH="$(brew --repository)/Library/Taps/${TAP_PATH}"
           mkdir -p "$ABS_TAP_PATH"
           cp -r . "$ABS_TAP_PATH"
+          brew trust "${TAP_PATH}" || true
 
       - name: Run brew style
         run: brew style --cask "${{ env.CASK_PATH }}"
@@ -74,19 +88,66 @@ jobs:
           brew uninstall --cask "${{ env.CASK_PATH }}" 2>/dev/null || true
           rm -rf "$(brew --repository)/Library/Taps/${{ env.TAP_PATH }}" || true
 
+  validate-formula:
+    name: Validate Formula
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has_formula_changes == 'true'
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        formula: ${{ fromJson(needs.detect-changes.outputs.formulae) }}
+        os: [macos-26, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    env:
+      TAP_PATH: ${{ github.repository_owner }}/homebrew-tap
+      FORMULA_PATH: ${{ github.repository_owner }}/homebrew-tap/${{ matrix.formula }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Homebrew
+        if: runner.os == 'Linux'
+        run: echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
+
+      - name: Tap this repository
+        run: |
+          ABS_TAP_PATH="$(brew --repository)/Library/Taps/${TAP_PATH}"
+          mkdir -p "$ABS_TAP_PATH"
+          cp -r . "$ABS_TAP_PATH"
+          brew trust "${TAP_PATH}" || true
+
+      - name: Run brew style
+        run: brew style --formula "${{ env.FORMULA_PATH }}"
+
+      - name: Run brew audit
+        run: brew audit --strict --online --formula "${{ env.FORMULA_PATH }}"
+
+      - name: Install formula
+        run: brew install --formula --verbose "${{ env.FORMULA_PATH }}"
+
+      - name: Test formula
+        run: brew test --verbose "${{ env.FORMULA_PATH }}"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          brew uninstall --formula "${{ env.FORMULA_PATH }}" 2>/dev/null || true
+          rm -rf "$(brew --repository)/Library/Taps/${{ env.TAP_PATH }}" || true
+
   cask-validation-status:
     name: Cask Validation Status
     runs-on: ubuntu-latest
-    needs: [detect-changes, validate-cask]
+    needs: [detect-changes, validate-cask, validate-formula]
     if: always()
     steps:
       - name: Check validation result
         run: |
-          result="${{ needs.validate-cask.result }}"
-          if [[ "$result" == "success" || "$result" == "skipped" ]]; then
-            echo "Cask validation passed or was not required."
-            exit 0
-          else
-            echo "Cask validation failed with result: $result"
-            exit 1
-          fi
+          for result in "${{ needs.validate-cask.result }}" "${{ needs.validate-formula.result }}"; do
+            if [[ "$result" != "success" && "$result" != "skipped" ]]; then
+              echo "Validation failed with result: $result"
+              exit 1
+            fi
+          done
+          echo "Validation passed or was not required."

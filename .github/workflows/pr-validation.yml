@@ -50,7 +50,7 @@ jobs:
 
   validate-cask:
     name: Validate Cask
-    runs-on: macos-27
+    runs-on: xcode-27
     needs: detect-changes
     if: needs.detect-changes.outputs.has_cask_changes == 'true'
     permissions:

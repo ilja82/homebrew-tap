@@ -10,23 +10,23 @@ class Aisbx < Formula
 
   on_macos do
     on_arm do
-      url "https://github.com/ilja82/aisbx/releases/download/v0.54.1.0/aisbx-0.54.1.0-aarch64-apple-darwin.tar.gz"
-      sha256 "9e6e426f637bd43758ffe1c5ce52b12aa4fd614e2a6620d44b62d0f88d13fb58"
+      url "https://github.com/ilja82/aisbx/releases/download/v0.54.1.1/aisbx-0.54.1.1-aarch64-apple-darwin.tar.gz"
+      sha256 "30c762b975f8009859b86e4665b8fe9cb2dd32b523b73a990aa0d6150037556f"
     end
     on_intel do
-      url "https://github.com/ilja82/aisbx/releases/download/v0.54.1.0/aisbx-0.54.1.0-x86_64-apple-darwin.tar.gz"
-      sha256 "8686f05d39036409e5dd2d93a3cd96dbc0641387dc28a66b39a04dff4c65a255"
+      url "https://github.com/ilja82/aisbx/releases/download/v0.54.1.1/aisbx-0.54.1.1-x86_64-apple-darwin.tar.gz"
+      sha256 "b7b109fbf1507497b3f666164ec86d1e069a9e7bf8e672160953a60926d5ee6c"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/ilja82/aisbx/releases/download/v0.54.1.0/aisbx-0.54.1.0-aarch64-unknown-linux-gnu.tar.gz"
-      sha256 "642e253104f7933fda55cfb4c90309dce649e89e7824793850d337720ec84384"
+      url "https://github.com/ilja82/aisbx/releases/download/v0.54.1.1/aisbx-0.54.1.1-aarch64-unknown-linux-gnu.tar.gz"
+      sha256 "a8dd242e32da11ec4f6533ddccf7770a074824c693bf17b6a23dc12cb57738bb"
     end
     on_intel do
-      url "https://github.com/ilja82/aisbx/releases/download/v0.54.1.0/aisbx-0.54.1.0-x86_64-unknown-linux-gnu.tar.gz"
-      sha256 "7980c46818b7955eb6a879dfda69521ec114bb6882c54445d780fdebfef21a92"
+      url "https://github.com/ilja82/aisbx/releases/download/v0.54.1.1/aisbx-0.54.1.1-x86_64-unknown-linux-gnu.tar.gz"
+      sha256 "b488e960dd88af4ff1ba6250db2ededf48ae1ce3c5733ada57dda02ce4d4baab"
     end
   end
 
